@@ -27,7 +27,7 @@ score: 0~100, verdict: 위험(70+)/주의(40~69)/정상(0~39), findings 최대 4
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 800,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: prefix + text.slice(0, 2000) }]
