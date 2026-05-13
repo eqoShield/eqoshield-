@@ -131,8 +131,9 @@ code { font-size: 12px; background: var(--surface2); padding: 1px 5px; border-ra
   </div>
 
   <div class="tabs">
-    <button class="tab active" data-tab="text">📋 문자 / 글 분석</button>
-    <button class="tab" data-tab="url">🔗 URL 분석</button>
+    <button class="tab active" data-tab="text">📋 문자/글</button>
+    <button class="tab" data-tab="url">🔗 URL</button>
+    <button class="tab" data-tab="phone">📞 전화번호</button>
   </div>
 
   <!-- 문자/글 탭 -->
@@ -228,6 +229,64 @@ http://nhis-refund.xyz/claim?id=...
     </div>
   </div>
 
+
+  <!-- 전화번호 탭 -->
+  <div class="panel" id="panel-phone">
+    <div class="card">
+      <label class="field-label">의심스러운 전화번호를 입력하세요</label>
+      <input type="text" id="phoneInput" placeholder="예) 02-530-3114  /  010-9876-5432  /  +8210-1234-5678" />
+      <button class="example-btn" id="phoneExampleBtn">보이스피싱 예시 넣어보기</button>
+
+      <div class="tips-wrap" style="margin-top:14px">
+        <button class="tips-head" id="phoneTipsToggle">
+          <span>공식 기관 대표번호 (이 번호로 직접 확인하세요)</span>
+          <span id="phoneTipsArrow">▼</span>
+        </button>
+        <div class="tips-body" id="phoneTipsBody">
+          <div class="tip-row"><span>🏛️</span><span>검찰청 대표번호 — <code>1301</code></span></div>
+          <div class="tip-row"><span>🚔</span><span>경찰청 민원 — <code>182</code></span></div>
+          <div class="tip-row"><span>🏦</span><span>금융감독원 — <code>1332</code></span></div>
+          <div class="tip-row"><span>🏥</span><span>국민건강보험공단 — <code>1577-1000</code></span></div>
+          <div class="tip-row"><span>📮</span><span>국민연금공단 — <code>1355</code></span></div>
+          <div class="tip-row"><span>🏢</span><span>국세청 — <code>126</code></span></div>
+          <div class="tip-row"><span>⚖️</span><span>대법원 — <code>1566-2017</code></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="error-msg" id="phoneError"></div>
+    <button class="btn-analyze" id="phoneAnalyzeBtn">🔍 전화번호 확인하기</button>
+    <div class="loading-area" id="phoneLoading">
+      <div class="spinner"></div>
+      <p>AI가 분석 중입니다...</p>
+    </div>
+    <div class="result-area" id="phoneResult">
+      <div class="result-card">
+        <div class="verdict-bar">
+          <div class="verdict-icon" id="phoneVerdictIcon"></div>
+          <div class="verdict-text">
+            <h3 id="phoneVerdictTitle"></h3>
+            <p id="phoneVerdictSub"></p>
+          </div>
+        </div>
+        <div class="score-wrap">
+          <div class="score-meta"><span>위험도</span><span id="phoneScoreLabel">0%</span></div>
+          <div class="score-track"><div class="score-fill" id="phoneScoreFill"></div></div>
+        </div>
+        <div class="divider"></div>
+        <div class="findings">
+          <h4>분석 결과</h4>
+          <div id="phoneFindingsList"></div>
+        </div>
+        <div class="divider"></div>
+        <div class="summary-area"><p id="phoneSummary"></p></div>
+      </div>
+      <div style="margin-top:12px; padding:14px 16px; background:#FAEEDA; border-radius:var(--radius-sm); font-size:13px; color:#854F0B; line-height:1.6;">
+        ⚠️ <strong>중요:</strong> AI 분석은 참고용입니다. 공공기관을 사칭한다면 <strong>절대 콜백하지 말고</strong> 위 공식 번호로 직접 전화해서 확인하세요.
+      </div>
+      <button class="btn-reset" id="phoneReset">← 다시 확인하기</button>
+    </div>
+  </div>
+
   <!-- 공유 -->
   <div class="share-section">
     <h3>부모님 · 지인에게 공유하기</h3>
@@ -246,6 +305,7 @@ http://nhis-refund.xyz/claim?id=...
   <p style="margin-top:4px">분석 결과는 참고용이며 100% 정확하지 않을 수 있습니다</p>
   <p style="margin-top:4px">문의 · <a href="mailto:eqoshield@gmail.com" style="color:var(--text3)">eqoshield@gmail.com</a></p>
 </footer>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -409,6 +469,40 @@ document.getElementById('urlReset').addEventListener('click', () => {
   document.getElementById('urlReset').style.display = 'none';
   document.getElementById('urlAnalyzeBtn').disabled = false;
   hideError('urlError');
+});
+
+// 전화번호 탭
+document.getElementById('phoneTipsToggle').addEventListener('click', () => {
+  const body = document.getElementById('phoneTipsBody');
+  body.classList.toggle('open');
+  document.getElementById('phoneTipsArrow').textContent = body.classList.contains('open') ? '▲' : '▼';
+});
+
+document.getElementById('phoneExampleBtn').addEventListener('click', () => {
+  document.getElementById('phoneInput').value = '02-530-3114';
+  hideError('phoneError');
+});
+
+document.getElementById('phoneAnalyzeBtn').addEventListener('click', () => {
+  const phone = document.getElementById('phoneInput').value.trim();
+  if (!phone || phone.length < 4) { showError('phoneError', '전화번호를 입력해 주세요'); return; }
+  const text = `다음 전화번호가 보이스피싱·사기 전화인지 분석해줘: ${phone}
+
+분석 기준:
+- 공공기관(검찰, 경찰, 법원, 건강보험, 국세청 등) 공식 번호인지
+- 070 인터넷전화, 해외번호(+82 등)인지
+- 발신번호 조작(스푸핑) 가능성
+- 알려진 사기 번호 패턴
+- 공식기관이 절대 하지 않는 행동 안내 (계좌이체 요구, 앱 설치 요구 등)`;
+  analyze(text, false, 'phone');
+});
+
+document.getElementById('phoneReset').addEventListener('click', () => {
+  document.getElementById('phoneInput').value = '';
+  document.getElementById('phoneResult').style.display = 'none';
+  document.getElementById('phoneReset').style.display = 'none';
+  document.getElementById('phoneAnalyzeBtn').disabled = false;
+  hideError('phoneError');
 });
 
 // 공유
